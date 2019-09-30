@@ -138,37 +138,35 @@ test_torchvision() {
 }
 
 test_libtorch() {
-  if [[ "$BUILD_TEST_LIBTORCH" == "1" ]]; then
+  # It doesn't look like test_jit is built in rocm presently
+  if [[ "$BUILD_ENVIRONMENT" != *rocm* ]]; then
     echo "Testing libtorch"
     python test/cpp/jit/tests_setup.py setup
-    CPP_BUILD="$PWD/../cpp-build"
     if [[ "$BUILD_ENVIRONMENT" == *cuda* ]]; then
-      "$CPP_BUILD"/caffe2/build/bin/test_jit
+      build/bin/test_jit
     else
-      "$CPP_BUILD"/caffe2/build/bin/test_jit "[cpu]"
+      build/bin/test_jit "[cpu]"
     fi
     python test/cpp/jit/tests_setup.py shutdown
     python tools/download_mnist.py --quiet -d test/cpp/api/mnist
-    OMP_NUM_THREADS=2 TORCH_CPP_TEST_MNIST_PATH="test/cpp/api/mnist" "$CPP_BUILD"/caffe2/build/bin/test_api
+    OMP_NUM_THREADS=2 TORCH_CPP_TEST_MNIST_PATH="test/cpp/api/mnist" build/bin/test_api
     assert_git_not_dirty
   fi
 }
 
 test_custom_script_ops() {
-  if [[ "$BUILD_TEST_LIBTORCH" == "1" ]]; then
-    echo "Testing custom script operators"
-    CUSTOM_OP_BUILD="$PWD/../custom-op-build"
-    pushd test/custom_operator
-    cp -a "$CUSTOM_OP_BUILD" build
-    # Run tests Python-side and export a script module.
-    python test_custom_ops.py -v
-    python test_custom_classes.py -v
-    python model.py --export-script-module=model.pt
-    # Run tests C++-side and load the exported script module.
-    build/test_custom_ops ./model.pt
-    popd
-    assert_git_not_dirty
-  fi
+  echo "Testing custom script operators"
+  CUSTOM_OP_BUILD="$PWD/../custom-op-build"
+  pushd test/custom_operator
+  cp -a "$CUSTOM_OP_BUILD" build
+  # Run tests Python-side and export a script module.
+  python test_custom_ops.py -v
+  python test_custom_classes.py -v
+  python model.py --export-script-module=model.pt
+  # Run tests C++-side and load the exported script module.
+  build/test_custom_ops ./model.pt
+  popd
+  assert_git_not_dirty
 }
 
 test_xla() {

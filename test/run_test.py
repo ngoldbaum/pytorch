@@ -49,7 +49,6 @@ TESTS = [
     'quantized_tensor',
     'quantized_nn_mods',
     'quantizer',
-    'rpc',
     'sparse',
     'torch',
     'type_info',
@@ -66,7 +65,10 @@ TESTS = [
 
 # skip < 3.6 b/c fstrings added in 3.6
 if PY36:
-    TESTS.append('jit_py3')
+    TESTS.extend([
+        'jit_py3',
+        'rpc',
+    ])
 
 WINDOWS_BLACKLIST = [
     'distributed',

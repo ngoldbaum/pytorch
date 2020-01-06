@@ -5,6 +5,7 @@
 #include <torch/ordered_dict.h>
 
 #include <torch/csrc/utils/pybind.h>
+#include <torch/csrc/utils/tensor_overrides.h>
 
 #include <string>
 #include <vector>
@@ -66,6 +67,7 @@ void init_bindings(PyObject* module) {
 
   bind_ordered_dict<Tensor>(cpp, "OrderedTensorDict");
   bind_ordered_dict<std::shared_ptr<nn::Module>>(cpp, "OrderedModuleDict");
+  cpp.def("_implement_torch_function", &_implement_torch_function);
 
   py::module nn = cpp.def_submodule("nn");
   add_module_bindings(

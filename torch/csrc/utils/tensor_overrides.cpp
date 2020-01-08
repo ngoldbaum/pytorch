@@ -132,14 +132,57 @@ auto check_has_torch_function(PyObject* obj) -> bool
   return false;
 }
 
+py::object handle_torch_function_from_overloaded_args(const std::vector<py::handle> &overloaded_args, py::object torch_api_function, const std::string &func_name, PyObject* args, PyObject* kwargs) {
+  py::object ret;
+  for (auto &arg : overloaded_args) {
+    py::object torch_function = PyObject_FastGetAttrString(arg.ptr(), "__torch_function__");
+    ret = py::reinterpret_steal<py::object>(PyObject_CallFunctionObjArgs(torch_function.ptr(), torch_api_function.ptr(), args, kwargs, NULL));
+    if (ret.ptr() != Py_NotImplemented) {
+      // Return the reference to the result. This also covers the case where ret
+      // is NULL and __torch_function__ raised an exception, which we throw below
+      break;
+    }
+  }
+  if (ret.ptr() == nullptr) {
+    // if an exception occurred in a user's implementation of
+    // __array_function__, throw it
+    throw python_error();
+  }
+  else if (ret.ptr() == Py_NotImplemented) {
+    // all __torch_function__ implementations in overloaded_args
+    // returned NotImplemented, so we raise a TypeError.
+    std::stringstream ss;
+    ss << "no implementation found for 'torch." << func_name
+       << "' on types that implement __torch_function__: [";
+    for (auto &arg : overloaded_args) {
+      ss << arg.ptr()->ob_type->tp_name;
+      if (!arg.is(overloaded_args.back())) {
+        ss << ", ";
+      }
+      else {
+        ss << "]";
+      }
+    }
+    const std::string& tmp = ss.str();
+    PyErr_SetString(PyExc_TypeError, tmp.c_str());
+    throw python_error();
+  }
+  return ret;
+}
+
 namespace python {
 
-void _implement_torch_function(py::function implementation, py::function public_api, py::iterable relevant_args, py::tuple args, py::dict kwargs) {
-  py::print(implementation);
-  py::print(public_api);
-  py::print(relevant_args);
-  py::print(args);
-  py::print(kwargs);
+py::object _implement_torch_function(py::function implementation, py::function public_api, std::string func_name, py::iterable relevant_args, py::tuple args, py::dict kwargs) {
+  std::vector<py::handle> overloaded_args;
+
+  for (auto iter = py::iter(relevant_args); iter != py::iterator::sentinel(); ++iter) {
+    if (check_has_torch_function((*iter).ptr())) {
+      append_overloaded_arg(overloaded_args, (*iter).ptr());
+    }
+  }
+
+  return handle_torch_function_from_overloaded_args(overloaded_args, public_api, func_name, args.ptr(), kwargs.ptr());
+  
 }
 
 } // namespace python

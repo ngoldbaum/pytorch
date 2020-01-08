@@ -32,6 +32,7 @@ else:
     from inspect import getargspec
 
 from .tensor import Tensor
+from ._C.cpp import _implement_torch_function
 
 
 _TENSOR_ONLY = [Tensor]
@@ -99,7 +100,7 @@ def _get_overloaded_types_and_args(relevant_args):
     return overloaded_types, overloaded_args
 
 
-def _implement_torch_function(
+def __implement_torch_function(
         implementation, public_api, relevant_args, args, kwargs):
     """Implement a function with checks for __torch_function__ overrides.
 
@@ -176,7 +177,7 @@ _wrapped_func_source = textwrap.dedent("""
     def {name}(*args, **kwargs):
         relevant_args = dispatcher(*args, **kwargs)
         return implement_torch_function(
-            implementation, {name}, relevant_args, args, kwargs)
+            implementation, {name}, {name}.__name__, relevant_args, args, kwargs)
     """)
 
 def torch_function_dispatch(dispatcher, module=None, verify=True):

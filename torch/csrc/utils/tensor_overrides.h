@@ -80,9 +80,11 @@ auto check_has_torch_function(PyObject* obj) -> bool;
 
 void append_overloaded_arg(std::vector<py::handle> &overloaded_args, PyObject* obj);
 
+py::object handle_torch_function_from_overloaded_args(const std::vector<py::handle> &overloaded_args, py::object torch_api_function, const std::string &func_name, PyObject* args, PyObject* kwargs);
+
 namespace python {
 
-void _implement_torch_function(py::function implementation, py::function public_api, py::iterable relevant_args, py::tuple args, py::dict kwargs);
+py::object _implement_torch_function(py::function implementation, py::function public_api, std::string func_name, py::iterable relevant_args, py::tuple args, py::dict kwargs);
 
 } // namespace python
 } // namespace torch

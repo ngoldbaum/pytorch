@@ -20,6 +20,7 @@
 #include "torch/csrc/utils/tensor_layouts.h"
 #include "torch/csrc/utils/tensor_new.h"
 #include "torch/csrc/utils/tensor_numpy.h"
+#include "torch/csrc/utils/tensor_overrides.h"
 #include "torch/csrc/jit/tracer.h"
 #include "torch/csrc/autograd/generated/variable_factories.h"
 #include "torch/csrc/utils/structseq.h"
@@ -491,43 +492,9 @@ void initTorchFunctions(PyObject* module) {
  */
 
 PyObject* handle_torch_function(PythonArgs &r, PyObject* args, PyObject* kwargs, PyTypeObject &torch_api) {
-  py::object torch_api_function = PyObject_FastGetAttrString((PyObject*)&torch_api, const_cast<char*>(r.get_func_name().data()));
+  py::object torch_api_function = PyObject_FastGetAttrString((PyObject*)&torch_api, const_cast<char*>(r.signature.name.data()));
   TORCH_INTERNAL_ASSERT(torch_api_function.ptr() != NULL, "torch API function must exist");
-  py::object ret;
-  for (auto &arg : r.signature.overloaded_args) {
-    py::object torch_function = PyObject_FastGetAttrString(arg.ptr(), "__torch_function__");
-    ret = py::reinterpret_steal<py::object>(PyObject_CallFunctionObjArgs(torch_function.ptr(), torch_api_function.ptr(), args, kwargs, NULL));
-    if (ret.ptr() != Py_NotImplemented) {
-      // Return the reference to the result. This also covers the case where ret
-      // is NULL and __torch_function__ raised an exception, which we throw below
-      break;
-    }
-  }
-  if (ret.ptr() == nullptr) {
-    // if an exception occurred in a user's implementation of
-    // __array_function__, throw it
-    throw python_error();
-  }
-  else if (ret.ptr() == Py_NotImplemented) {
-    // all __torch_function__ implementations in overloaded_args
-    // returned NotImplemented, so we raise a TypeError.
-    std::stringstream ss;
-    ss << "no implementation found for 'torch." << r.get_func_name()
-       << "' on types that implement __torch_function__: [";
-    for (auto &arg : r.signature.overloaded_args) {
-      ss << arg.ptr()->ob_type->tp_name;
-      if (!arg.is(r.signature.overloaded_args.back())) {
-        ss << ", ";
-      }
-      else {
-        ss << "]";
-      }
-    }
-    const std::string& tmp = ss.str();
-    PyErr_SetString(PyExc_TypeError, tmp.c_str());
-    throw python_error();
-  }
-  return ret.release().ptr();
+  return handle_torch_function_from_overloaded_args(r.signature.overloaded_args, torch_api_function, r.signature.name, args, kwargs).release().ptr();
 }
 
 // generated methods start here

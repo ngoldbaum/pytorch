@@ -108,6 +108,7 @@ set(TORCH_PYTHON_SRCS
     ${TORCH_SRC_DIR}/csrc/utils/tensor_qschemes.cpp
     ${TORCH_SRC_DIR}/csrc/utils/tensor_new.cpp
     ${TORCH_SRC_DIR}/csrc/utils/tensor_numpy.cpp
+    ${TORCH_SRC_DIR}/csrc/utils/tensor_overrides.cpp
     ${TORCH_SRC_DIR}/csrc/utils/tensor_types.cpp
     )
 

@@ -32,7 +32,7 @@ void append_overloaded_arg(std::vector<py::handle> &overloaded_args, PyObject* o
   }
 }
 
-static py::object PyObject_FastGetAttrString(PyObject *obj, char *name)
+py::object PyObject_FastGetAttrString(PyObject *obj, char *name)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     PyObject *res = (PyObject *)NULL;
@@ -60,7 +60,7 @@ static py::object PyObject_FastGetAttrString(PyObject *obj, char *name)
 }
 
 // Makes sure that we don't check for __torch_function__ on basic Python types
-static bool _is_basic_python_type(PyTypeObject *tp)
+bool _is_basic_python_type(PyTypeObject *tp)
 {
   return (
     /* Basic number types */
@@ -108,7 +108,7 @@ static bool _is_basic_python_type(PyTypeObject *tp)
  * In future, could be made more like _Py_LookupSpecial
  */
 
-static py::object PyTorch_LookupSpecial(PyObject *obj, char* name)
+py::object PyTorch_LookupSpecial(PyObject *obj, char* name)
 {
   PyTypeObject *tp = Py_TYPE(obj);
   if (THPVariable_CheckExact(obj)) {

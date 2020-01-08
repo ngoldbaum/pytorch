@@ -31,7 +31,7 @@ namespace torch {
  *
  */
 
-static py::object PyObject_FastGetAttrString(PyObject *obj, char *name);
+py::object PyObject_FastGetAttrString(PyObject *obj, char *name);
 
 /*
  * Checks if obj has a __torch_function__ implementation

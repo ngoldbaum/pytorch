@@ -182,6 +182,10 @@ py::object _implement_torch_function(py::function implementation, py::function p
     }
   }
 
+  if (overloaded_args.empty()) {
+    return implementation(*args, **kwargs);
+  }
+  
   HANDLE_TH_ERRORS
   return handle_torch_function_from_overloaded_args(overloaded_args, public_api, func_name, args.ptr(), kwargs.ptr());
   END_HANDLE_TH_ERRORS_PYBIND

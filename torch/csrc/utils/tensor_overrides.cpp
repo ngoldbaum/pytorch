@@ -177,8 +177,9 @@ py::object _implement_torch_function(py::function implementation, py::function p
   std::vector<py::handle> overloaded_args;
 
   for (auto iter = py::iter(relevant_args); iter != py::iterator::sentinel(); ++iter) {
-    if (check_has_torch_function((*iter).ptr())) {
-      append_overloaded_arg(overloaded_args, (*iter).ptr());
+    PyObject* pyobj = iter.ptr();
+    if (check_has_torch_function(pyobj)) {
+      append_overloaded_arg(overloaded_args, pyobj);
     }
   }
 
